@@ -1,7 +1,7 @@
-#include "mold.h"
 #include "../common/archive-file.h"
 #include "../common/output-file.h"
 #include "../common/sha.h"
+#include "mold.h"
 
 #include <cstdlib>
 #include <fcntl.h>
@@ -16,8 +16,8 @@
 #include <tbb/parallel_sort.h>
 
 #ifndef _WIN32
-# include <sys/mman.h>
-# include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/time.h>
 #endif
 
 namespace mold::macho {
@@ -30,25 +30,22 @@ split_string(std::string_view str, char sep) {
   return {str.substr(0, pos), str.substr(pos + 1)};
 }
 
-template <typename E>
-static bool has_lto_obj(Context<E> &ctx) {
+template <typename E> static bool has_lto_obj(Context<E> &ctx) {
   for (ObjectFile<E> *file : ctx.objs)
     if (file->lto_module)
       return true;
   return false;
 }
 
-template <typename E>
-static void resolve_symbols(Context<E> &ctx) {
+template <typename E> static void resolve_symbols(Context<E> &ctx) {
   Timer t(ctx, "resolve_symbols");
 
   std::vector<InputFile<E> *> files;
   append(files, ctx.objs);
   append(files, ctx.dylibs);
 
-  tbb::parallel_for_each(files, [&](InputFile<E> *file) {
-    file->resolve_symbols(ctx);
-  });
+  tbb::parallel_for_each(
+      files, [&](InputFile<E> *file) { file->resolve_symbols(ctx); });
 
   if (has_lto_obj(ctx))
     do_lto(ctx);
@@ -75,9 +72,8 @@ static void resolve_symbols(Context<E> &ctx) {
       live_objs.push_back(file);
 
   for (i64 i = 0; i < live_objs.size(); i++) {
-    live_objs[i]->mark_live_objects(ctx, [&](ObjectFile<E> *file) {
-      live_objs.push_back(file);
-    });
+    live_objs[i]->mark_live_objects(
+        ctx, [&](ObjectFile<E> *file) { live_objs.push_back(file); });
   }
 
   // Remove symbols of eliminated files.
@@ -96,7 +92,7 @@ static void resolve_symbols(Context<E> &ctx) {
   std::erase_if(ctx.objs, [](InputFile<E> *file) { return !file->is_alive; });
   std::erase_if(ctx.dylibs, [](InputFile<E> *file) { return !file->is_alive; });
 
-  for (i64 i = 1; DylibFile<E> *file : ctx.dylibs)
+  for (i64 i = 1; DylibFile<E> * file : ctx.dylibs)
     if (file->dylib_idx != BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE)
       file->dylib_idx = i++;
 }
@@ -112,7 +108,8 @@ static void handle_exported_symbols_list(Context<E> &ctx) {
       if (sym && sym->file == file)
         if (sym->visibility != SCOPE_LOCAL)
           sym->visibility = ctx.arg.exported_symbols_list.find(sym->name)
-            ? SCOPE_GLOBAL : SCOPE_MODULE;
+                                ? SCOPE_GLOBAL
+                                : SCOPE_MODULE;
   });
 }
 
@@ -131,8 +128,7 @@ static void handle_unexported_symbols_list(Context<E> &ctx) {
   });
 }
 
-template <typename E>
-static void compute_import_export(Context<E> &ctx) {
+template <typename E> static void compute_import_export(Context<E> &ctx) {
   // Compute is_imported and is_exported values
   tbb::parallel_for_each(ctx.objs, [&](ObjectFile<E> *file) {
     for (Symbol<E> *sym : file->syms) {
@@ -185,8 +181,7 @@ static void compute_import_export(Context<E> &ctx) {
     import(*ctx.dyld_stub_binder);
 }
 
-template <typename E>
-static void create_internal_file(Context<E> &ctx) {
+template <typename E> static void create_internal_file(Context<E> &ctx) {
   Timer t(ctx, "create_internal_file");
 
   ObjectFile<E> *obj = new ObjectFile<E>;
@@ -273,9 +268,8 @@ static void remove_unreferenced_subsections(Context<E> &ctx) {
         file->sym_to_subsec[i]->is_alive = false;
     }
 
-    std::erase_if(file->subsections, [](Subsection<E> *subsec) {
-      return !subsec->is_alive;
-    });
+    std::erase_if(file->subsections,
+                  [](Subsection<E> *subsec) { return !subsec->is_alive; });
   });
 }
 
@@ -313,43 +307,43 @@ static bool compare_chunks(const Chunk<E> *a, const Chunk<E> *b) {
     return !is_bss(a);
 
   static const std::string_view rank[] = {
-    // __TEXT
-    "__mach_header",
-    "__stubs",
-    "__text",
-    "__stub_helper",
-    "__gcc_except_tab",
-    "__cstring",
-    "__eh_frame",
-    "__unwind_info",
-    // __DATA_CONST
-    "__got",
-    "__const",
-    // __DATA
-    "__mod_init_func",
-    "__la_symbol_ptr",
-    "__thread_ptrs",
-    "__data",
-    "__objc_imageinfo",
-    "__thread_vars",
-    "__thread_ptr",
-    "__thread_data",
-    "__thread_bss",
-    "__common",
-    "__bss",
-    // __LINKEDIT
-    "__rebase",
-    "__binding",
-    "__weak_binding",
-    "__lazy_binding",
-    "__chainfixups",
-    "__export",
-    "__func_starts",
-    "__data_in_code",
-    "__symbol_table",
-    "__ind_sym_tab",
-    "__string_table",
-    "__code_signature",
+      // __TEXT
+      "__mach_header",
+      "__stubs",
+      "__text",
+      "__stub_helper",
+      "__gcc_except_tab",
+      "__cstring",
+      "__eh_frame",
+      "__unwind_info",
+      // __DATA_CONST
+      "__got",
+      "__const",
+      // __DATA
+      "__mod_init_func",
+      "__la_symbol_ptr",
+      "__thread_ptrs",
+      "__data",
+      "__objc_imageinfo",
+      "__thread_vars",
+      "__thread_ptr",
+      "__thread_data",
+      "__thread_bss",
+      "__common",
+      "__bss",
+      // __LINKEDIT
+      "__rebase",
+      "__binding",
+      "__weak_binding",
+      "__lazy_binding",
+      "__chainfixups",
+      "__export",
+      "__func_starts",
+      "__data_in_code",
+      "__symbol_table",
+      "__ind_sym_tab",
+      "__string_table",
+      "__code_signature",
   };
 
   auto get_rank = [](std::string_view name) {
@@ -374,8 +368,7 @@ static Chunk<E> *find_section(Context<E> &ctx, std::string_view segname,
   return nullptr;
 }
 
-template <typename E>
-static void claim_unresolved_symbols(Context<E> &ctx) {
+template <typename E> static void claim_unresolved_symbols(Context<E> &ctx) {
   Timer t(ctx, "claim_unresolved_symbols");
 
   // Handle -U
@@ -412,7 +405,8 @@ static void claim_unresolved_symbols(Context<E> &ctx) {
     for (Symbol<E> *sym : ctx.objs[i]->syms) {
       InputFile<E> *expected = nullptr;
       if (is_null(&sym->file) &&
-          (sym->name.starts_with("_objc_msgSend$") || !ctx.arg.undefined_error) &&
+          (sym->name.starts_with("_objc_msgSend$") ||
+           !ctx.arg.undefined_error) &&
           compare_exchange(&sym->file, ctx.internal_obj)) {
         if (sym->name.starts_with("_objc_msgSend$")) {
           msgsend_syms[i].push_back(sym);
@@ -459,8 +453,7 @@ static void claim_unresolved_symbols(Context<E> &ctx) {
   append(ctx.internal_obj->syms, other_syms2);
 }
 
-template <typename E>
-static void create_synthetic_chunks(Context<E> &ctx) {
+template <typename E> static void create_synthetic_chunks(Context<E> &ctx) {
   Timer t(ctx, "create_synthetic_chunks");
 
   // Create symbol import tables.
@@ -492,8 +485,9 @@ static void create_synthetic_chunks(Context<E> &ctx) {
   // Handle -sectcreate
   for (SectCreateOption arg : ctx.arg.sectcreate) {
     MappedFile<Context<E>> *mf =
-      MappedFile<Context<E>>::must_open(ctx, std::string(arg.filename));
-    new SectCreateSection<E>(ctx, arg.segname, arg.sectname, mf->get_contents());
+        MappedFile<Context<E>>::must_open(ctx, std::string(arg.filename));
+    new SectCreateSection<E>(ctx, arg.segname, arg.sectname,
+                             mf->get_contents());
   }
 
   // We add subsections specified by -order_file to output sections.
@@ -523,7 +517,8 @@ static void create_synthetic_chunks(Context<E> &ctx) {
   for (AddEmptySectionOption &opt : ctx.arg.add_empty_section) {
     if (!find_section(ctx, opt.segname, opt.sectname)) {
       OutputSegment<E> *seg = OutputSegment<E>::get_instance(ctx, opt.segname);
-      Chunk<E> *sec = new SectCreateSection<E>(ctx, opt.segname, opt.sectname, {});
+      Chunk<E> *sec =
+          new SectCreateSection<E>(ctx, opt.segname, opt.sectname, {});
       seg->chunks.push_back(sec);
     }
   }
@@ -592,7 +587,8 @@ static void uniquify_literals(Context<E> &ctx, OutputSection<E> &osec) {
     Subsection<E> *existing = ref.ent->owner;
     while (existing->isec->file.priority < ref.subsec->isec->file.priority &&
            !ref.ent->owner.compare_exchange_weak(existing, ref.subsec,
-                                                 std::memory_order_relaxed));
+                                                 std::memory_order_relaxed))
+      ;
 
     update_maximum(ref.ent->p2align, ref.subsec->p2align.load());
   });
@@ -606,9 +602,8 @@ static void uniquify_literals(Context<E> &ctx, OutputSection<E> &osec) {
   });
 
   static Counter counter("num_merged_strings");
-  counter += std::erase_if(osec.members, [](Subsection<E> *subsec) {
-    return subsec->is_replaced;
-  });
+  counter += std::erase_if(
+      osec.members, [](Subsection<E> *subsec) { return subsec->is_replaced; });
 }
 
 // Merge S_LITERAL_POINTERS subsections such as __DATA,__objc_selrefs
@@ -646,13 +641,11 @@ static void uniquify_literal_pointers(Context<E> &ctx, OutputSection<E> &osec) {
   }
 
   static Counter counter("num_merged_literal_pointers");
-  counter += std::erase_if(osec.members, [](Subsection<E> *subsec) {
-    return subsec->is_replaced;
-  });
+  counter += std::erase_if(
+      osec.members, [](Subsection<E> *subsec) { return subsec->is_replaced; });
 }
 
-template <typename E>
-static void merge_mergeable_sections(Context<E> &ctx) {
+template <typename E> static void merge_mergeable_sections(Context<E> &ctx) {
   Timer t(ctx, "merge_mergeable_sections");
 
   for (Chunk<E> *chunk : ctx.chunks) {
@@ -694,14 +687,12 @@ static void merge_mergeable_sections(Context<E> &ctx) {
 
   // Remove deduplicated subsections from each file's subsection vector.
   tbb::parallel_for_each(ctx.objs, [&](ObjectFile<E> *file) {
-    std::erase_if(file->subsections, [](Subsection<E> *subsec) {
-      return subsec->is_replaced;
-    });
+    std::erase_if(file->subsections,
+                  [](Subsection<E> *subsec) { return subsec->is_replaced; });
   });
 }
 
-template <typename E>
-static void scan_relocations(Context<E> &ctx) {
+template <typename E> static void scan_relocations(Context<E> &ctx) {
   Timer t(ctx, "scan_relocations");
 
   tbb::parallel_for_each(ctx.objs, [&](ObjectFile<E> *file) {
@@ -748,8 +739,7 @@ static void scan_relocations(Context<E> &ctx) {
   }
 }
 
-template <typename E>
-static i64 assign_offsets(Context<E> &ctx) {
+template <typename E> static i64 assign_offsets(Context<E> &ctx) {
   Timer t(ctx, "assign_offsets");
 
   i64 sect_idx = 1;
@@ -772,8 +762,7 @@ static i64 assign_offsets(Context<E> &ctx) {
 // An address of a symbol of type S_THREAD_LOCAL_VARIABLES is computed
 // as a relative address to the beginning of the first thread-local
 // section. This function finds the beginning address.
-template <typename E>
-static u64 get_tls_begin(Context<E> &ctx) {
+template <typename E> static u64 get_tls_begin(Context<E> &ctx) {
   for (std::unique_ptr<OutputSegment<E>> &seg : ctx.segments)
     for (Chunk<E> *chunk : seg->chunks)
       if (chunk->hdr.type == S_THREAD_LOCAL_REGULAR ||
@@ -782,8 +771,7 @@ static u64 get_tls_begin(Context<E> &ctx) {
   return 0;
 }
 
-template <typename E>
-static void fix_synthetic_symbol_values(Context<E> &ctx) {
+template <typename E> static void fix_synthetic_symbol_values(Context<E> &ctx) {
   ctx.__dyld_private->value = ctx.data->hdr.addr;
   ctx.__mh_dylib_header->value = ctx.data->hdr.addr;
   ctx.__mh_bundle_header->value = ctx.data->hdr.addr;
@@ -856,29 +844,28 @@ template <typename E>
 static void copy_sections_to_output_file(Context<E> &ctx) {
   Timer t(ctx, "copy_sections_to_output_file");
 
-  tbb::parallel_for_each(ctx.segments,
-                         [&](std::unique_ptr<OutputSegment<E>> &seg) {
-    Timer t2(ctx, std::string(seg->cmd.get_segname()), &t);
+  tbb::parallel_for_each(
+      ctx.segments, [&](std::unique_ptr<OutputSegment<E>> &seg) {
+        Timer t2(ctx, std::string(seg->cmd.get_segname()), &t);
 
-    // Fill text segment paddings with single-byte NOP instructions so
-    // that otool wouldn't out-of-sync when disassembling an output file.
-    // Do this only for x86-64 because ARM64 instructions are always 4
-    // bytes long.
-    if constexpr (is_x86<E>)
-      if (seg->cmd.get_segname() == "__TEXT")
-        memset(ctx.buf + seg->cmd.fileoff, 0x90, seg->cmd.filesize);
+        // Fill text segment paddings with single-byte NOP instructions so
+        // that otool wouldn't out-of-sync when disassembling an output file.
+        // Do this only for x86-64 because ARM64 instructions are always 4
+        // bytes long.
+        if constexpr (is_x86<E>)
+          if (seg->cmd.get_segname() == "__TEXT")
+            memset(ctx.buf + seg->cmd.fileoff, 0x90, seg->cmd.filesize);
 
-    tbb::parallel_for_each(seg->chunks, [&](Chunk<E> *sec) {
-      if (sec->hdr.type != S_ZEROFILL) {
-        Timer t3(ctx, std::string(sec->hdr.get_sectname()), &t2);
-        sec->copy_buf(ctx);
-      }
-    });
-  });
+        tbb::parallel_for_each(seg->chunks, [&](Chunk<E> *sec) {
+          if (sec->hdr.type != S_ZEROFILL) {
+            Timer t3(ctx, std::string(sec->hdr.get_sectname()), &t2);
+            sec->copy_buf(ctx);
+          }
+        });
+      });
 }
 
-template <typename E>
-static void compute_uuid(Context<E> &ctx) {
+template <typename E> static void compute_uuid(Context<E> &ctx) {
   Timer t(ctx, "copy_sections_to_output_file");
 
   // Compute a markle tree of height two.
@@ -949,8 +936,8 @@ static void read_file(Context<E> &ctx, MappedFile<Context<E>> *mf) {
 }
 
 template <typename E>
-static std::vector<std::string>
-read_filelist(Context<E> &ctx, std::string arg) {
+static std::vector<std::string> read_filelist(Context<E> &ctx,
+                                              std::string arg) {
   std::string path;
   std::string dir;
 
@@ -989,11 +976,13 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
   std::unordered_set<std::string> libs;
   std::unordered_set<std::string> frameworks;
 
-  auto search = [&](std::vector<std::string> names) -> MappedFile<Context<E>> * {
+  auto search =
+      [&](std::vector<std::string> names) -> MappedFile<Context<E>> * {
     for (std::string dir : ctx.arg.library_paths) {
       for (std::string name : names) {
         std::string path = dir + "/lib" + name;
-        if (MappedFile<Context<E>> *mf = MappedFile<Context<E>>::open(ctx, path))
+        if (MappedFile<Context<E>> *mf =
+                MappedFile<Context<E>>::open(ctx, path))
           return mf;
         ctx.missing_files.insert(path);
       }
@@ -1052,7 +1041,12 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
   auto read_framework = [&](std::string name) {
     if (!frameworks.insert(name).second)
       return;
-
+    if (name == "ApplicationServices") {
+      MappedFile<Context<E>> *mf = find_framework("ColorSync");
+      if (!mf)
+        Fatal(ctx) << "-framework not found: " << name;
+      read_file(ctx, mf);
+    }
     MappedFile<Context<E>> *mf = find_framework(name);
     if (!mf)
       Fatal(ctx) << "-framework not found: " << name;
@@ -1096,6 +1090,7 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
       ctx.reader.all_load = true;
       read_file(ctx, MappedFile<Context<E>>::must_open(ctx, arg));
     } else if (opt == "-framework") {
+
       read_framework(arg);
     } else if (opt == "-needed_framework") {
       ctx.reader.needed = true;
@@ -1154,7 +1149,8 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
         }
         j++;
       } else {
-        Fatal(ctx) << *file << ": unknown LC_LINKER_OPTION command: " << opts[j];
+        Fatal(ctx) << *file
+                   << ": unknown LC_LINKER_OPTION command: " << opts[j];
       }
     }
 
@@ -1177,15 +1173,14 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
   for (DylibFile<E> *dylib : ctx.dylibs)
     dylib->priority = ctx.file_priority++;
 
-  for (i64 i = 1; DylibFile<E> *file : ctx.dylibs)
+  for (i64 i = 1; DylibFile<E> * file : ctx.dylibs)
     if (file->dylib_idx != BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE)
       file->dylib_idx = i++;
 }
 
-template <typename E>
-void print_dependencies(Context<E> &ctx) {
+template <typename E> void print_dependencies(Context<E> &ctx) {
   SyncOut(ctx) <<
-R"(# This is an output of the sold linker's --print-dependencies option.
+      R"(# This is an output of the sold linker's --print-dependencies option.
 #
 # Each line consists of 4 fields, <file1>, <file2>, <symbol-type> and
 # <symbol>, separated by tab characters. It indicates that <file1> depends
@@ -1209,17 +1204,16 @@ R"(# This is an output of the sold linker's --print-dependencies option.
         MachSym<E> &msym = file->mach_syms[r.idx];
         Symbol<E> &sym = *file->syms[r.idx];
 
-        if (msym.is_undef() && sym.file && sym.file != file && visited.insert(&sym).second)
-          SyncOut(ctx) << *file << '\t' << *sym.file
-                       << '\t' << ((msym.desc & N_WEAK_DEF) ? 'w' : 'u')
-                       << '\t' << sym;
+        if (msym.is_undef() && sym.file && sym.file != file &&
+            visited.insert(&sym).second)
+          SyncOut(ctx) << *file << '\t' << *sym.file << '\t'
+                       << ((msym.desc & N_WEAK_DEF) ? 'w' : 'u') << '\t' << sym;
       }
     }
   }
 }
 
-template <typename E>
-static void write_dependency_info(Context<E> &ctx) {
+template <typename E> static void write_dependency_info(Context<E> &ctx) {
   static constexpr u8 LINKER_VERSION = 0;
   static constexpr u8 INPUT_FILE = 0x10;
   static constexpr u8 NOT_FOUND_FILE = 0x11;
@@ -1228,8 +1222,8 @@ static void write_dependency_info(Context<E> &ctx) {
   std::ofstream out;
   out.open(std::string(ctx.arg.dependency_info).c_str());
   if (!out.is_open())
-    Fatal(ctx) << "cannot open " << ctx.arg.dependency_info
-               << ": " << errno_string();
+    Fatal(ctx) << "cannot open " << ctx.arg.dependency_info << ": "
+               << errno_string();
 
   out << LINKER_VERSION << mold_version << '\0';
 
@@ -1248,8 +1242,7 @@ static void write_dependency_info(Context<E> &ctx) {
   out.close();
 }
 
-template <typename E>
-static void print_stats(Context<E> &ctx) {
+template <typename E> static void print_stats(Context<E> &ctx) {
   for (ObjectFile<E> *file : ctx.objs) {
     static Counter subsections("num_subsections");
     subsections += file->subsections.size();
@@ -1269,8 +1262,7 @@ static void print_stats(Context<E> &ctx) {
   Counter::print();
 }
 
-template <typename E>
-static int redo_main(int argc, char **argv, i64 arch) {
+template <typename E> static int redo_main(int argc, char **argv, i64 arch) {
   switch (arch) {
   case CPU_TYPE_ARM64_32:
     return macho_main<ARM64_32>(argc, argv);
@@ -1280,8 +1272,7 @@ static int redo_main(int argc, char **argv, i64 arch) {
   unreachable();
 }
 
-template <typename E>
-int macho_main(int argc, char **argv) {
+template <typename E> int macho_main(int argc, char **argv) {
   Context<E> ctx;
 
   for (i64 i = 0; i < argc; i++)
@@ -1366,7 +1357,7 @@ int macho_main(int argc, char **argv) {
   fix_synthetic_symbol_values(ctx);
 
   ctx.output_file =
-    OutputFile<Context<E>>::open(ctx, ctx.arg.output, output_size, 0777);
+      OutputFile<Context<E>>::open(ctx, ctx.arg.output, output_size, 0777);
   ctx.buf = ctx.output_file->buf;
 
   copy_sections_to_output_file(ctx);
@@ -1412,13 +1403,11 @@ using E = MOLD_TARGET;
 extern template int macho_main<ARM64_32>(int, char **);
 extern template int macho_main<X86_64>(int, char **);
 
-int main(int argc, char **argv) {
-  return macho_main<ARM64>(argc, argv);
-}
+int main(int argc, char **argv) { return macho_main<ARM64>(argc, argv); }
 
 #else
 
 template int macho_main<E>(int, char **);
 
 #endif
-}
+} // namespace mold::macho
